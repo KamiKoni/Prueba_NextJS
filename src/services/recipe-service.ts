@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 import { getCollections, type RecipeDocument } from "@/lib/mongodb";
-import type { RecipeRecord } from "@/types/app";
+import type { CreateRecipePayload, RecipeRecord } from "@/types/app";
 
 const starterRecipes: Omit<RecipeDocument, "_id">[] = [
   {
@@ -247,4 +247,52 @@ export async function listRecipesBySlugs(slugs: string[]) {
   return docs
     .sort((left, right) => (order.get(left.slug) ?? 0) - (order.get(right.slug) ?? 0))
     .map((recipe) => serializeRecipe(recipe));
+}
+
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
+}
+
+export async function createRecipe(payload: CreateRecipePayload) {
+  const { recipes } = await getCollections();
+
+  let baseSlug = slugify(payload.title);
+  if (!baseSlug) {
+    baseSlug = "recipe";
+  }
+
+  let slug = baseSlug;
+  let counter = 1;
+  while (await recipes.findOne({ slug })) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  const now = new Date();
+  const doc: RecipeDocument = {
+    _id: new ObjectId(),
+    slug,
+    title: payload.title,
+    description: payload.description,
+    imageUrl: payload.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80",
+    cookTimeMinutes: payload.cookTimeMinutes,
+    servings: payload.servings,
+    difficulty: payload.difficulty,
+    tags: payload.tags,
+    ingredients: payload.ingredients,
+    steps: payload.steps,
+    chefTip: payload.chefTip || "",
+    internalNotes: "Created by user",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await recipes.insertOne(doc);
+  return serializeRecipe(doc, true);
 }

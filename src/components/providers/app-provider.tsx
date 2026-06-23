@@ -222,6 +222,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toggleFavorite,
     clearNotification: () => setNotification(null),
     clearSession,
+    setNotification,
     users: [],
     schedules: [],
     auditLogs: [],
@@ -246,6 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toggleFavorite,
     clearNotification: value.clearNotification,
     clearSession,
+    setNotification,
   };
 
   const scheduleValue: ScheduleContextValue = {

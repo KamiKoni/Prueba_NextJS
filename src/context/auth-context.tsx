@@ -16,6 +16,7 @@ export interface AuthContextValue {
   toggleFavorite: (slug: string) => Promise<void>;
   clearNotification: () => void;
   clearSession: () => void;
+  setNotification: (notification: NotificationState | null) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

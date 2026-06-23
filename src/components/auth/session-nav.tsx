@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
+import Link from "next/link";
 
 import { useAppState } from "@/hooks/use-state";
 
@@ -33,7 +34,9 @@ export function SessionNav() {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="mini-pill">{session.name}</span>
+      <Link className="mini-pill hover:bg-stone-200 transition-colors cursor-pointer" href="/">
+        {session.name}
+      </Link>
       <a className="secondary-button" href="/favorites">
         Favorites
       </a>

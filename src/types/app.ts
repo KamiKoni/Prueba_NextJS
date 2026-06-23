@@ -125,3 +125,16 @@ export interface NotificationState {
   tone: "success" | "error" | "info";
   message: string;
 }
+
+export interface CreateRecipePayload {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  cookTimeMinutes: number;
+  servings: number;
+  difficulty: "Easy" | "Medium" | "Chef";
+  tags: string[];
+  ingredients: string[];
+  steps: string[];
+  chefTip?: string;
+}

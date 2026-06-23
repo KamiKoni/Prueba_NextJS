@@ -68,3 +68,16 @@ export const updateScheduleSchema = z
 export const favoriteSchema = z.object({
   favorite: z.boolean(),
 });
+
+export const createRecipeSchema = z.object({
+  title: z.string().trim().min(3).max(120),
+  description: z.string().trim().min(5).max(1000),
+  imageUrl: z.string().trim().url().or(z.literal("")).optional(),
+  cookTimeMinutes: z.number().int().positive(),
+  servings: z.number().int().positive(),
+  difficulty: z.enum(["Easy", "Medium", "Chef"]),
+  tags: z.array(z.string().trim().min(1)).min(1),
+  ingredients: z.array(z.string().trim().min(1)).min(1),
+  steps: z.array(z.string().trim().min(1)).min(1),
+  chefTip: z.string().trim().max(1000).optional().transform((val) => val || undefined),
+});
