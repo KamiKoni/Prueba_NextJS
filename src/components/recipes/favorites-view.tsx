@@ -11,7 +11,7 @@ import type { FavoritesPayload, RecipeRecord } from "@/types/app";
 
 export function FavoritesView() {
   const router = useRouter();
-  const { session, bootstrapping } = useAppState();
+  const { session, bootstrapping, clearSession } = useAppState();
   const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +21,6 @@ export function FavoritesView() {
     }
 
     if (!session) {
-      setLoading(false);
       router.replace("/auth/login");
       return;
     }
@@ -36,8 +35,8 @@ export function FavoritesView() {
         });
 
         if (response.status === 401) {
+          clearSession();
           if (!cancelled) {
-            setLoading(false);
             router.replace("/auth/login");
           }
           return;
@@ -62,7 +61,7 @@ export function FavoritesView() {
     return () => {
       cancelled = true;
     };
-  }, [bootstrapping, router, session]);
+  }, [bootstrapping, router, session, clearSession]);
 
   if (bootstrapping || loading) {
     return (

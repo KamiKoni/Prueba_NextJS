@@ -12,13 +12,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  if ((pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register")) && hasSession) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/favorites/:path*", "/auth/login", "/auth/register"],
+  matcher: ["/dashboard/:path*", "/favorites/:path*"],
 };

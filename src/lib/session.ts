@@ -1,7 +1,9 @@
 import type { NextRequest } from "next/server";
 
+import { cookies } from "next/headers";
+
 import { verifyAccessToken } from "@/lib/auth";
-import { ACCESS_COOKIE_NAME, isEnabledStatus } from "@/lib/constants";
+import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, isEnabledStatus } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import { findUserById } from "@/services/user-service";
 
@@ -17,12 +19,17 @@ export async function requireSession(request: NextRequest) {
   try {
     payload = verifyAccessToken(accessToken);
   } catch {
+    const store = await cookies();
+    store.delete(ACCESS_COOKIE_NAME);
     throw new AppError(401, "UNAUTHORIZED", "Your session has expired.");
   }
 
   const user = await findUserById(payload.sub);
 
   if (!user || !isEnabledStatus(user.status)) {
+    const store = await cookies();
+    store.delete(ACCESS_COOKIE_NAME);
+    store.delete(REFRESH_COOKIE_NAME);
     throw new AppError(401, "UNAUTHORIZED", "Your account is unavailable.");
   }
 

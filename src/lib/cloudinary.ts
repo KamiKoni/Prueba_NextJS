@@ -5,7 +5,7 @@ export interface CloudinaryTransformOptions {
 }
 
 function getCloudName(): string | undefined {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
   return cloudName || undefined;
 }
 

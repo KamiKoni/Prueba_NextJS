@@ -135,7 +135,7 @@ const starterRecipes: Omit<RecipeDocument, "_id">[] = [
     title: "Chocolate Lava Mug Cake",
     description: "Single-serve molten chocolate cake ready in under ten minutes.",
     imageUrl:
-      "https://images.unsplash.com/photo-1606313564200-e75d5e30476e?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80",
     cookTimeMinutes: 9,
     servings: 1,
     difficulty: "Easy",

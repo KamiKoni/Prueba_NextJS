@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 
@@ -15,19 +14,19 @@ export function SessionNav() {
     router.refresh();
   }
 
-  if (bootstrapping) {
+  if (bootstrapping && session) {
     return <span className="mini-pill">Checking session</span>;
   }
 
   if (!session) {
     return (
       <div className="flex items-center gap-2">
-        <Link href="/auth/login">
-          <Button variant="secondary">Sign in</Button>
-        </Link>
-        <Link href="/auth/register">
-          <Button variant="primary">Register</Button>
-        </Link>
+        <a className="secondary-button" href="/auth/login">
+          Sign in
+        </a>
+        <a className="primary-button" href="/auth/register">
+          Register
+        </a>
       </div>
     );
   }
@@ -35,9 +34,9 @@ export function SessionNav() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <span className="mini-pill">{session.name}</span>
-      <Link href="/favorites">
-        <Button variant="secondary">Favorites</Button>
-      </Link>
+      <a className="secondary-button" href="/favorites">
+        Favorites
+      </a>
       <Button isDisabled={busy} variant="outline" onPress={() => void handleLogout()}>
         Sign out
       </Button>

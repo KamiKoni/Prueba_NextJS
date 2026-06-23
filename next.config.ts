@@ -5,6 +5,10 @@ import { fileURLToPath } from "node:url";
 const root = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  // Expose cloud name to the client so RecipeImage SSR and hydration agree.
+  env: {
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ?? "",
+  },
   turbopack: {
     root,
   },

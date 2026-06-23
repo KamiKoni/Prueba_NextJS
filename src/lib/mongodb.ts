@@ -68,7 +68,9 @@ export interface AuditLogDocument {
 
 export async function getMongoClient() {
   if (!globalForMongo.mongoClientPromise) {
-    globalForMongo.mongoClientPromise = new MongoClient(getEnv().MONGO_URI).connect();
+    globalForMongo.mongoClientPromise = new MongoClient(getEnv().MONGO_URI, {
+      serverSelectionTimeoutMS: 5_000,
+    }).connect();
   }
 
   return globalForMongo.mongoClientPromise;

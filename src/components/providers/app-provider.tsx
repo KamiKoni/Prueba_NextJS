@@ -2,10 +2,9 @@
 
 import {
   createContext,
-  startTransition,
+  useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -52,81 +51,93 @@ function hasRefreshCookie() {
   return document.cookie.includes(`${REFRESH_COOKIE_NAME}=`);
 }
 
-async function requestData<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as {
-    success?: boolean;
-    data?: T;
-    error?: { message?: string };
-  };
-
-  if (!response.ok || payload.success === false) {
-    throw new Error(payload.error?.message ?? "Request failed.");
-  }
-
-  return payload.data as T;
-}
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionUser | null>(null);
   const [favoriteSlugs, setFavoriteSlugs] = useState<string[]>([]);
   const [bootstrapping, setBootstrapping] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notification, setNotification] = useState<NotificationState | null>(null);
-  const bootstrapped = useRef(false);
 
-  async function loadFavoriteSlugs() {
+  const clearSession = useCallback(() => {
+    setSession(null);
+    setFavoriteSlugs([]);
+  }, []);
+
+  const requestData = useCallback(async <T,>(url: string, init?: RequestInit): Promise<T> => {
+    const response = await fetch(url, {
+      ...init,
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+
+    if (response.status === 401) {
+      clearSession();
+    }
+
+    const payload = (await response.json().catch(() => ({}))) as {
+      success?: boolean;
+      data?: T;
+      error?: { message?: string };
+    };
+
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error?.message ?? "Request failed.");
+    }
+
+    return payload.data as T;
+  }, [clearSession]);
+
+  const loadFavoriteSlugs = useCallback(async () => {
     const data = await requestData<{ favoriteSlugs: string[] }>("/api/favorites/slugs");
     setFavoriteSlugs(data.favoriteSlugs);
-  }
+  }, [requestData]);
 
-  async function bootstrap() {
-    if (bootstrapped.current) {
-      return;
-    }
-
-    bootstrapped.current = true;
-
+  const restoreSession = useCallback(async () => {
     try {
       const data = await requestData<{ user: SessionUser }>("/api/auth/me");
-      startTransition(() => setSession(data.user));
+      setSession(data.user);
       void loadFavoriteSlugs();
+      return;
     } catch {
       if (!hasRefreshCookie()) {
-        startTransition(() => {
-          setSession(null);
-          setFavoriteSlugs([]);
-        });
-      } else {
-        try {
-          const data = await requestData<{ user: SessionUser }>("/api/auth/refresh", {
-            method: "POST",
-          });
-          startTransition(() => setSession(data.user));
-          void loadFavoriteSlugs();
-        } catch {
-          startTransition(() => {
-            setSession(null);
-            setFavoriteSlugs([]);
-          });
-        }
+        setSession(null);
+        setFavoriteSlugs([]);
+        return;
       }
-    } finally {
-      setBootstrapping(false);
+
+      try {
+        const data = await requestData<{ user: SessionUser }>("/api/auth/refresh", {
+          method: "POST",
+        });
+        setSession(data.user);
+        void loadFavoriteSlugs();
+      } catch {
+        setSession(null);
+        setFavoriteSlugs([]);
+      }
     }
-  }
+  }, [requestData, loadFavoriteSlugs]);
 
   useEffect(() => {
-    void bootstrap();
-  }, []);
+    let active = true;
+
+    void (async () => {
+      try {
+        await restoreSession();
+      } finally {
+        if (active) {
+          setBootstrapping(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [restoreSession]);
 
   async function login(email: string, password: string) {
     setBusy(true);
@@ -210,10 +221,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logout,
     toggleFavorite,
     clearNotification: () => setNotification(null),
+    clearSession,
     users: [],
     schedules: [],
     auditLogs: [],
-    refreshDashboard: async () => bootstrap(),
+    refreshDashboard: async () => restoreSession(),
     createUser: async () => notAvailable(),
     updateUser: async () => notAvailable(),
     deactivateUser: async () => notAvailable(),
@@ -233,6 +245,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logout,
     toggleFavorite,
     clearNotification: value.clearNotification,
+    clearSession,
   };
 
   const scheduleValue: ScheduleContextValue = {
