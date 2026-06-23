@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { SessionNav } from "@/components/auth/session-nav";
 import { FavoriteButton } from "@/components/recipes/favorite-button";
 import { RecipeImage } from "@/components/recipes/recipe-image";
+import { RecipeActions } from "@/components/recipes/recipe-actions";
 import { getRecipeBySlug } from "@/lib/recipes";
+import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,9 @@ export default async function RecipeDetailPage({
   if (!recipe) {
     notFound();
   }
+
+  const cookieStore = await cookies();
+  const hasSession = cookieStore.has(ACCESS_COOKIE_NAME) || cookieStore.has(REFRESH_COOKIE_NAME);
 
   return (
     <main className="min-h-screen">
@@ -63,6 +69,7 @@ export default async function RecipeDetailPage({
                 <span className="metric-card rounded-lg p-4 text-sm font-bold">{recipe.servings} servings</span>
                 <span className="metric-card rounded-lg p-4 text-sm font-bold">{recipe.difficulty}</span>
               </div>
+              {hasSession && <RecipeActions slug={recipe.slug} />}
             </div>
           </div>
 

@@ -296,3 +296,40 @@ export async function createRecipe(payload: CreateRecipePayload) {
   await recipes.insertOne(doc);
   return serializeRecipe(doc, true);
 }
+
+export async function updateRecipe(slug: string, payload: CreateRecipePayload) {
+  const { recipes } = await getCollections();
+  const now = new Date();
+
+  const existing = await recipes.findOne({ slug });
+  if (!existing) {
+    return null;
+  }
+
+  const updatedDoc: RecipeDocument = {
+    ...existing,
+    title: payload.title,
+    description: payload.description,
+    imageUrl: payload.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80",
+    cookTimeMinutes: payload.cookTimeMinutes,
+    servings: payload.servings,
+    difficulty: payload.difficulty,
+    tags: payload.tags,
+    ingredients: payload.ingredients,
+    steps: payload.steps,
+    chefTip: payload.chefTip || "",
+    updatedAt: now,
+  };
+
+  await recipes.replaceOne({ slug }, updatedDoc);
+  return serializeRecipe(updatedDoc, true);
+}
+
+export async function deleteRecipe(slug: string) {
+  const { recipes, favorites } = await getCollections();
+
+  const result = await recipes.deleteOne({ slug });
+  await favorites.deleteMany({ recipeSlug: slug });
+
+  return result.deletedCount > 0;
+}

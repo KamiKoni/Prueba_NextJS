@@ -8,7 +8,13 @@ export function proxy(request: NextRequest) {
     request.cookies.has(ACCESS_COOKIE_NAME) || request.cookies.has(REFRESH_COOKIE_NAME);
   const { pathname } = request.nextUrl;
 
-  if ((pathname.startsWith("/dashboard") || pathname.startsWith("/favorites") || pathname.startsWith("/recipes/new")) && !hasSession) {
+  if (
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/favorites") ||
+      pathname.startsWith("/recipes/new") ||
+      (pathname.startsWith("/recipes/") && pathname.endsWith("/edit"))) &&
+    !hasSession
+  ) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
@@ -16,5 +22,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/favorites/:path*", "/recipes/new"],
+  matcher: ["/dashboard/:path*", "/favorites/:path*", "/recipes/new", "/recipes/:slug/edit"],
 };

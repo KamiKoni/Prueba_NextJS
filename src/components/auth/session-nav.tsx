@@ -37,6 +37,9 @@ export function SessionNav() {
       <Link className="mini-pill hover:bg-stone-200 transition-colors cursor-pointer" href="/">
         {session.name}
       </Link>
+      <Link className="secondary-button" href="/recipes/new">
+        Create Recipe
+      </Link>
       <a className="secondary-button" href="/favorites">
         Favorites
       </a>
