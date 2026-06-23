@@ -42,7 +42,6 @@ export async function createUser(params: {
     passwordHash: params.passwordHash,
     role: params.role ?? "EMPLOYEE",
     status: params.status ?? "ACTIVE",
-    favoriteRecipeSlugs: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -57,24 +56,32 @@ export async function getSessionUser(id: string): Promise<SessionUser | null> {
 }
 
 export async function getFavoriteSlugs(userId: string) {
-  const user = await findUserById(userId);
-  return user?.favoriteRecipeSlugs ?? [];
+  const { favorites } = await getCollections();
+  const id = toObjectId(userId);
+  if (!id) {
+    return [];
+  }
+  const docs = await favorites.find({ userId: id }).toArray();
+  return docs.map((doc) => doc.recipeSlug);
 }
 
 export async function setFavoriteSlug(userId: string, slug: string, favorite: boolean) {
-  const { users } = await getCollections();
+  const { favorites } = await getCollections();
   const id = toObjectId(userId);
 
   if (!id) {
     return [];
   }
 
-  await users.updateOne(
-    { _id: id },
-    favorite
-      ? { $addToSet: { favoriteRecipeSlugs: slug }, $set: { updatedAt: new Date() } }
-      : { $pull: { favoriteRecipeSlugs: slug }, $set: { updatedAt: new Date() } },
-  );
+  if (favorite) {
+    await favorites.updateOne(
+      { userId: id, recipeSlug: slug },
+      { $setOnInsert: { createdAt: new Date() } },
+      { upsert: true },
+    );
+  } else {
+    await favorites.deleteOne({ userId: id, recipeSlug: slug });
+  }
 
   return getFavoriteSlugs(userId);
 }

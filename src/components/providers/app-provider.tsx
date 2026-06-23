@@ -9,16 +9,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { HeroUIProvider } from "@heroui/react";
 
 import { AuthContext, type AuthContextValue } from "@/context/auth-context";
 import { ScheduleContext, type ScheduleContextValue } from "@/context/schedule-context";
+import { REFRESH_COOKIE_NAME } from "@/lib/constants";
 import type {
   AuditLogRecord,
   CreateSchedulePayload,
   CreateUserPayload,
   NotificationState,
-  FavoritesPayload,
   ScheduleRecord,
   SessionUser,
   UpdateSchedulePayload,
@@ -43,6 +42,14 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unexpected request error.";
+}
+
+function hasRefreshCookie() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  return document.cookie.includes(`${REFRESH_COOKIE_NAME}=`);
 }
 
 async function requestData<T>(url: string, init?: RequestInit): Promise<T> {
@@ -76,6 +83,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notification, setNotification] = useState<NotificationState | null>(null);
   const bootstrapped = useRef(false);
 
+  async function loadFavoriteSlugs() {
+    const data = await requestData<{ favoriteSlugs: string[] }>("/api/favorites/slugs");
+    setFavoriteSlugs(data.favoriteSlugs);
+  }
+
   async function bootstrap() {
     if (bootstrapped.current) {
       return;
@@ -86,28 +98,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const data = await requestData<{ user: SessionUser }>("/api/auth/me");
       startTransition(() => setSession(data.user));
-      await loadFavorites();
+      void loadFavoriteSlugs();
     } catch {
-      try {
-        const data = await requestData<{ user: SessionUser }>("/api/auth/refresh", {
-          method: "POST",
-        });
-        startTransition(() => setSession(data.user));
-        await loadFavorites();
-      } catch {
+      if (!hasRefreshCookie()) {
         startTransition(() => {
           setSession(null);
           setFavoriteSlugs([]);
         });
+      } else {
+        try {
+          const data = await requestData<{ user: SessionUser }>("/api/auth/refresh", {
+            method: "POST",
+          });
+          startTransition(() => setSession(data.user));
+          void loadFavoriteSlugs();
+        } catch {
+          startTransition(() => {
+            setSession(null);
+            setFavoriteSlugs([]);
+          });
+        }
       }
     } finally {
       setBootstrapping(false);
     }
-  }
-
-  async function loadFavorites() {
-    const data = await requestData<FavoritesPayload>("/api/favorites");
-    setFavoriteSlugs(data.favoriteSlugs);
   }
 
   useEffect(() => {
@@ -123,7 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       setSession(data.user);
-      await loadFavorites();
+      await loadFavoriteSlugs();
       setNotification({ tone: "success", message: "Session started successfully." });
     } catch (error) {
       setNotification({ tone: "error", message: getErrorMessage(error) });
@@ -177,7 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     const favorite = !favoriteSlugs.includes(slug);
-    const data = await requestData<FavoritesPayload>(`/api/favorites/${slug}`, {
+    const data = await requestData<{ favoriteSlugs: string[] }>(`/api/favorites/${slug}`, {
       method: "PUT",
       body: JSON.stringify({ favorite }),
     });
@@ -235,13 +249,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <HeroUIProvider>
-      <AuthContext.Provider value={authValue}>
-        <ScheduleContext.Provider value={scheduleValue}>
-          <AppContext.Provider value={value}>{children}</AppContext.Provider>
-        </ScheduleContext.Provider>
-      </AuthContext.Provider>
-    </HeroUIProvider>
+    <AuthContext.Provider value={authValue}>
+      <ScheduleContext.Provider value={scheduleValue}>
+        <AppContext.Provider value={value}>{children}</AppContext.Provider>
+      </ScheduleContext.Provider>
+    </AuthContext.Provider>
   );
 }
 

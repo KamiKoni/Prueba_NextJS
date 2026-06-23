@@ -1,3 +1,5 @@
+import { ZodError } from "zod";
+
 export class AppError extends Error {
   constructor(
     public readonly status: number,
@@ -19,8 +21,14 @@ export function toAppError(error: unknown) {
     return error;
   }
 
+  if (error instanceof ZodError) {
+    return new AppError(400, "VALIDATION_ERROR", "Invalid request payload.");
+  }
+
   if (error instanceof Error) {
-    return new AppError(500, "INTERNAL_ERROR", error.message);
+    const status = error.message.includes("environment variable") ? 503 : 500;
+    const code = status === 503 ? "CONFIG_ERROR" : "INTERNAL_ERROR";
+    return new AppError(status, code, error.message);
   }
 
   return new AppError(500, "INTERNAL_ERROR", "Unexpected server error.");

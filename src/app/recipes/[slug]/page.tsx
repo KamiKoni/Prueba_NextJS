@@ -1,9 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { SessionNav } from "@/components/auth/session-nav";
+import { FavoriteButton } from "@/components/recipes/favorite-button";
+import { RecipeImage } from "@/components/recipes/recipe-image";
 import { getRecipeBySlug } from "@/lib/recipes";
+
+export const dynamic = "force-dynamic";
 
 export default async function RecipeDetailPage({
   params,
@@ -29,15 +32,21 @@ export default async function RecipeDetailPage({
 
         <article className="mt-8 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-[0_20px_70px_rgba(40,28,18,0.08)]">
           <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
-            <div className="min-h-[22rem] bg-stone-200">
-              <Image
+            <div className="relative min-h-[22rem] bg-stone-200">
+              <RecipeImage
                 alt={recipe.title}
                 className="h-full w-full object-cover"
-                height={900}
+                cloudinaryHeight={720}
+                cloudinaryWidth={720}
+                height={720}
+                imageUrl={recipe.imageUrl}
                 priority
-                src={recipe.imageUrl}
-                width={900}
+                sizes="(max-width: 1024px) 100vw, 45vw"
+                width={720}
               />
+              <div className="absolute right-4 top-4">
+                <FavoriteButton slug={recipe.slug} />
+              </div>
             </div>
             <div className="p-6 lg:p-9">
               <div className="flex flex-wrap gap-2">

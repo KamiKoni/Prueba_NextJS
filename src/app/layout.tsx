@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, Space_Grotesk } from "next/font/google";
+import { Fraunces, Outfit } from "next/font/google";
 
 import { AppProvider } from "@/components/providers/app-provider";
 
 import "./globals.css";
 
-const displayFont = DM_Serif_Display({
+const displayFont = Fraunces({
   variable: "--font-display",
-  weight: "400",
   subsets: ["latin"],
 });
 
-const bodyFont = Space_Grotesk({
+const bodyFont = Outfit({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -31,6 +30,10 @@ export default function RootLayout({
       lang="es"
       className={`${displayFont.variable} ${bodyFont.variable} h-full antialiased`}
     >
+      <head>
+        <link href="https://res.cloudinary.com" rel="preconnect" />
+        <link href="https://images.unsplash.com" rel="preconnect" />
+      </head>
       <body className="min-h-full">
         <AppProvider>{children}</AppProvider>
       </body>

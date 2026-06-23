@@ -14,7 +14,6 @@ export interface UserDocument {
   passwordHash: string;
   role: AppRole;
   status: UserStatus;
-  favoriteRecipeSlugs?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +48,13 @@ export interface RecipeDocument {
   updatedAt: Date;
 }
 
+export interface FavoriteDocument {
+  _id: ObjectId;
+  userId: ObjectId;
+  recipeSlug: string;
+  createdAt: Date;
+}
+
 export interface AuditLogDocument {
   _id: ObjectId;
   actorId: ObjectId | null;
@@ -81,6 +87,7 @@ export async function getCollections() {
     refreshTokens: db.collection<RefreshTokenDocument>("refreshTokens"),
     recipes: db.collection<RecipeDocument>("recipes"),
     auditLogs: db.collection<AuditLogDocument>("auditLogs"),
+    favorites: db.collection<FavoriteDocument>("favorites"),
   };
 }
 

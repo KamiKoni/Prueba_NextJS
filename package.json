@@ -7,16 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cloudinary:onboard": "node --env-file=.env.local cloudinary-onboarding.js"
   },
   "dependencies": {
     "@heroui/react": "^3.2.1",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "date-fns": "^4.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
-    "next": "16.2.4",
-    "nodemailer": "^7.0.11",
+    "next": "^16.2.9",
+    "nodemailer": "^9.0.1",
+    "postcss": "^8.5.15",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.3.6"
@@ -32,5 +35,9 @@
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.11.1": true
   }
 }

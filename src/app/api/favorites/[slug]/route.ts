@@ -4,7 +4,6 @@ import { fail, ok } from "@/lib/api";
 import { parseBody } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { favoriteSchema } from "@/lib/schemas";
-import { listRecipesBySlugs } from "@/services/recipe-service";
 import { setFavoriteSlug } from "@/services/user-service";
 
 export async function PUT(
@@ -16,9 +15,8 @@ export async function PUT(
     const { slug } = await params;
     const payload = await parseBody(request, favoriteSchema);
     const favoriteSlugs = await setFavoriteSlug(session.id, slug, payload.favorite);
-    const recipes = await listRecipesBySlugs(favoriteSlugs);
 
-    return ok({ favoriteSlugs, recipes });
+    return ok({ favoriteSlugs });
   } catch (error) {
     return fail(error);
   }

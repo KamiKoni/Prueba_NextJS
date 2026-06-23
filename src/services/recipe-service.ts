@@ -70,6 +70,96 @@ const starterRecipes: Omit<RecipeDocument, "_id">[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    slug: "miso-glazed-salmon-bowl",
+    title: "Miso Glazed Salmon Bowl",
+    description: "Silky salmon over jasmine rice with cucumber, avocado, and sesame crunch.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80",
+    cookTimeMinutes: 30,
+    servings: 2,
+    difficulty: "Medium",
+    tags: ["Seafood", "Bowl", "Dinner"],
+    ingredients: [
+      "Salmon fillets",
+      "White miso",
+      "Jasmine rice",
+      "Avocado",
+      "Cucumber",
+      "Sesame seeds",
+      "Soy sauce",
+    ],
+    steps: [
+      "Whisk miso, soy sauce, honey, and rice vinegar into a glossy glaze.",
+      "Brush salmon with glaze and roast until just opaque in the center.",
+      "Cook rice and fan avocado and cucumber over each bowl.",
+      "Flake salmon on top and finish with sesame seeds and extra glaze.",
+    ],
+    chefTip: "Pull salmon off the heat when the center is still slightly translucent—it keeps cooking.",
+    internalNotes: "Showcase Cloudinary fetch optimization on Unsplash hero shots.",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    slug: "rustic-tomato-gnocchi",
+    title: "Rustic Tomato Gnocchi",
+    description: "Pillowy gnocchi in a slow-simmered tomato basil sauce with burrata.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=1200&q=80",
+    cookTimeMinutes: 35,
+    servings: 4,
+    difficulty: "Easy",
+    tags: ["Italian", "Vegetarian", "Comfort"],
+    ingredients: [
+      "Potato gnocchi",
+      "Crushed tomatoes",
+      "Garlic",
+      "Fresh basil",
+      "Burrata",
+      "Olive oil",
+      "Parmesan",
+    ],
+    steps: [
+      "Sweat garlic in olive oil, then add crushed tomatoes and simmer.",
+      "Pan-sear gnocchi until golden before tossing in the sauce.",
+      "Fold in torn basil off the heat and season to taste.",
+      "Serve with torn burrata and shaved parmesan.",
+    ],
+    chefTip: "Sear gnocchi in a single layer so they develop a crisp shell.",
+    internalNotes: "Detail page hides internalNotes from card view.",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    slug: "chocolate-lava-mug-cake",
+    title: "Chocolate Lava Mug Cake",
+    description: "Single-serve molten chocolate cake ready in under ten minutes.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1606313564200-e75d5e30476e?auto=format&fit=crop&w=1200&q=80",
+    cookTimeMinutes: 9,
+    servings: 1,
+    difficulty: "Easy",
+    tags: ["Dessert", "Quick", "Chocolate"],
+    ingredients: [
+      "Dark chocolate",
+      "Butter",
+      "Egg",
+      "Sugar",
+      "Flour",
+      "Cocoa powder",
+      "Vanilla extract",
+    ],
+    steps: [
+      "Melt chocolate and butter together until smooth.",
+      "Whisk in egg, sugar, and vanilla, then fold in flour and cocoa.",
+      "Pour into a buttered mug and bake until the edges set but the center jiggles.",
+      "Rest one minute, then dust with cocoa and serve warm.",
+    ],
+    chefTip: "Stop baking when the top looks set but a gentle poke still feels soft in the middle.",
+    internalNotes: "Great weeknight demo for favorites and detail view.",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ];
 
 function serializeRecipe(recipe: RecipeDocument, includeDetails = false): RecipeRecord {
@@ -89,13 +179,43 @@ function serializeRecipe(recipe: RecipeDocument, includeDetails = false): Recipe
   };
 }
 
-export async function ensureStarterRecipes() {
-  const { recipes } = await getCollections();
-  const count = await recipes.countDocuments();
+const starterSlugs = starterRecipes.map((recipe) => recipe.slug);
+let seedPromise: Promise<void> | null = null;
 
-  if (count === 0) {
-    await recipes.insertMany(starterRecipes.map((recipe) => ({ ...recipe, _id: new ObjectId() })));
+async function seedStarterRecipesOnce() {
+  const { recipes } = await getCollections();
+  const existingSlugs = await recipes.distinct("slug", { slug: { $in: starterSlugs } });
+
+  if (existingSlugs.length === starterSlugs.length) {
+    return;
   }
+
+  const missing = starterRecipes.filter((recipe) => !existingSlugs.includes(recipe.slug));
+
+  if (missing.length === 0) {
+    return;
+  }
+
+  await recipes.bulkWrite(
+    missing.map((recipe) => ({
+      updateOne: {
+        filter: { slug: recipe.slug },
+        update: { $setOnInsert: { ...recipe, _id: new ObjectId() } },
+        upsert: true,
+      },
+    }))
+  );
+}
+
+export function ensureStarterRecipes() {
+  if (!seedPromise) {
+    seedPromise = seedStarterRecipesOnce().catch((error) => {
+      seedPromise = null;
+      throw error;
+    });
+  }
+
+  return seedPromise;
 }
 
 export async function listRecipeCards() {

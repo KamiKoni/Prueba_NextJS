@@ -22,12 +22,12 @@ export function SessionNav() {
   if (!session) {
     return (
       <div className="flex items-center gap-2">
-        <Button as={Link} color="success" href="/auth/login" radius="sm" variant="flat">
-          Sign in
-        </Button>
-        <Button as={Link} color="success" href="/auth/register" radius="sm">
-          Register
-        </Button>
+        <Link href="/auth/login">
+          <Button variant="secondary">Sign in</Button>
+        </Link>
+        <Link href="/auth/register">
+          <Button variant="primary">Register</Button>
+        </Link>
       </div>
     );
   }
@@ -35,10 +35,10 @@ export function SessionNav() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <span className="mini-pill">{session.name}</span>
-      <Button as={Link} href="/favorites" radius="sm" variant="flat">
-        Favorites
-      </Button>
-      <Button isDisabled={busy} radius="sm" variant="bordered" onPress={() => void handleLogout()}>
+      <Link href="/favorites">
+        <Button variant="secondary">Favorites</Button>
+      </Link>
+      <Button isDisabled={busy} variant="outline" onPress={() => void handleLogout()}>
         Sign out
       </Button>
     </div>

@@ -62,8 +62,7 @@ export function LoginPanel({ initialMode = "login" }: { initialMode?: "login" | 
                 className={`flex-1 rounded-full px-4 py-2 text-sm font-bold ${
                   mode === item ? "bg-stone-950 text-white" : "text-stone-500"
                 }`}
-                radius="full"
-                variant={mode === item ? "solid" : "light"}
+                variant={mode === item ? "primary" : "ghost"}
                 onPress={() => setMode(item)}
               >
                 {item === "login" ? "Sign in" : "Register"}
@@ -119,7 +118,7 @@ export function LoginPanel({ initialMode = "login" }: { initialMode?: "login" | 
               />
             </label>
 
-            <Button className="w-full" color="success" isDisabled={busy} radius="sm" type="submit">
+            <Button className="w-full" isDisabled={busy} type="submit" variant="primary">
               {busy ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
             </Button>
           </form>

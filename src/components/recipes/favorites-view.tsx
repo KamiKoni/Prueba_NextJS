@@ -21,18 +21,47 @@ export function FavoritesView() {
     }
 
     if (!session) {
+      setLoading(false);
       router.replace("/auth/login");
       return;
     }
 
+    let cancelled = false;
+
     async function loadFavorites() {
-      const response = await fetch("/api/favorites", { credentials: "same-origin" });
-      const payload = (await response.json()) as { data?: FavoritesPayload };
-      setRecipes(payload.data?.recipes ?? []);
-      setLoading(false);
+      try {
+        const response = await fetch("/api/favorites", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (response.status === 401) {
+          if (!cancelled) {
+            setLoading(false);
+            router.replace("/auth/login");
+          }
+          return;
+        }
+
+        const payload = (await response.json()) as { data?: FavoritesPayload; success?: boolean };
+
+        if (!cancelled) {
+          setRecipes(payload.data?.recipes ?? []);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setRecipes([]);
+          setLoading(false);
+        }
+      }
     }
 
     void loadFavorites();
+
+    return () => {
+      cancelled = true;
+    };
   }, [bootstrapping, router, session]);
 
   if (bootstrapping || loading) {
@@ -50,14 +79,14 @@ export function FavoritesView() {
         <div className="panel mx-auto max-w-lg text-center">
           <p className="section-kicker">Favorites</p>
           <h1 className="section-title">No saved recipes yet</h1>
-          <Button as={Link} className="mt-5" color="success" href="/" radius="sm">
-            Browse recipes
-          </Button>
+          <Link href="/">
+            <Button className="mt-5" variant="primary">Browse recipes</Button>
+          </Link>
         </div>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {recipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+          {recipes.map((recipe, index) => (
+            <RecipeCard key={recipe.id} priority={index < 3} recipe={recipe} />
           ))}
         </div>
       )}

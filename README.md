@@ -1,190 +1,144 @@
-# ClockHub
+# Culinary Recipes Application
 
-Aplicación full-stack con Next.js, TypeScript y PostgreSQL vía Prisma para gestionar autenticación segura, usuarios, roles, horarios y auditoría operativa.
+A Next.js kitchen recipe web application featuring user authentication, MongoDB integration, and automated email services. This project is built as an exam evaluation submission.
 
-## Stack
+## Architecture and Technical Requirements
 
-- Next.js 16 + React 19
-- TypeScript
-- PostgreSQL
-- Prisma ORM
-- JWT + Refresh Tokens + HttpOnly Cookies
-- Tailwind CSS 4
-- Zod para validaciones
+### Project Architecture
+This application implements a decoupled Service Layer to separate data-fetching and business logic from the routing and page rendering views. All interactions with the database flow through this dedicated layer to ensure a clean, organized, and scalable codebase.
 
-## Funcionalidades
+### Database Schema (MongoDB)
+The application integrates with MongoDB using three main collections:
+- **users**: Stores registered user credentials and profile information.
+- **recipes**: Stores the catalog of recipes, including standard list data and extended fields visible only on the detail view.
+- **favorites**: Maps favorite recipe relations per authenticated user.
 
-- Autenticación con access token corto y refresh token rotado.
-- Cookies `HttpOnly`, `SameSite=Lax` y `Secure` en producción.
-- Roles `ADMIN`, `MANAGER` y `EMPLOYEE`.
-- CRUD REST para usuarios y horarios.
-- Detección de conflictos por solapamiento de horarios.
-- Auditoría de login, logout, refresh, cambios de usuarios y horarios.
-- Dashboard responsivo con `Context API` y hooks.
-- Manejo centralizado de errores en backend y frontend.
+### UI Component Library
+The user interface is built using a component library (such as Material UI or HeroUI) to handle core interactive elements like buttons, form inputs, and layout grids.
 
-## Modelo de permisos
+### External Services
+- **Automated Emails**: Connects to an external email service provider to automatically dispatch a welcome email to new users upon successful registration.
 
-- `ADMIN`
-  Administra todos los usuarios, horarios y auditoría.
-- `MANAGER`
-  Administra usuarios con rol `EMPLOYEE`, sus horarios y auditoría.
-- `EMPLOYEE`
-  Consulta su sesión y sus propios horarios.
+## Functional Features
 
-## Variables de entorno
+1. **Recipe Catalog**: The homepage displays a list of available recipes using a reusable component. Each recipe card presents an image, name, preparation time, and difficulty level. This catalog is publicly accessible.
+2. **Dynamic Detail View**: A dynamic route handles individual recipe pages. It renders extended data not present in the catalog layout, such as ingredients, step-by-step preparation guidelines, and serving sizes.
+3. **Authentication Framework**: Dedicated login and registration interfaces. Authenticated users will see their username displayed in the global navigation bar.
+4. **Favorites Management**: Authenticated users can toggle recipes into their favorites list via a bookmark icon on the components. A protected view displays only their saved recipes.
 
-Copia `.env.example` a `.env` y ajusta los valores:
+## Route and Authentication Mapping
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clockhub?schema=public"
-JWT_ACCESS_SECRET="change-me-with-a-long-random-secret"
-JWT_REFRESH_SECRET="change-me-with-a-different-long-random-secret"
-JWT_ACCESS_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
-```
+| Route | Description | Authentication Required |
+| :--- | :--- | :--- |
+| `/` | Main recipe catalog listing | No |
+| `/recipes/[slug]` | Comprehensive dynamic recipe detail view | No |
+| `/auth/login` | User authentication sign-in form | No |
+| `/auth/register` | New user account registration form | No |
+| `/favorites` | Curated list of marked favorite recipes | Yes |
 
-## Puesta en marcha
+## Installation and Local Setup
 
-1. Instala dependencias:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/KamiKoni/Prueba_NextJS.git
+   cd simulacro_typescript
+   ```
 
-```bash
-npm install
-```
+2. Install the project dependencies:
+   ```bash
+   npm install
+   ```
 
-2. Genera el cliente de Prisma:
+3. Copy the environment template and fill in your values:
+   ```bash
+   cp .env.example .env.local
+   ```
 
-```bash
-npm run prisma:generate
-```
+   Minimum required variables in `.env.local`:
+   ```text
+   # MongoDB Configuration
+   MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/
+   MONGO_DB_NAME=pantry_routes
 
-3. Aplica el esquema a PostgreSQL:
+   # Authentication Secret keys (needs to be secure strings, min 24 chars)
+   JWT_ACCESS_SECRET=your_jwt_access_secret_key_minimum_24_characters
+   JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_minimum_24_characters
+   JWT_ACCESS_EXPIRES_IN=15m
+   JWT_REFRESH_EXPIRES_IN=7d
 
-```bash
-npm run prisma:push
-```
+   # Cloudinary (optional — enables optimized recipe images)
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
 
-4. Carga datos de ejemplo:
+   # Email Service (SMTP) Configuration
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your_smtp_username@gmail.com
+   SMTP_PASS=your_smtp_app_password
+   SMTP_FROM=your_smtp_sender_email@gmail.com
+   ```
 
-```bash
-npm run db:seed
-```
+   In development, if `MONGO_URI` and JWT secrets are missing, safe local defaults are used automatically. For production, all required variables must be set explicitly.
 
-5. Inicia el entorno de desarrollo:
+4. Run the local development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run dev
-```
+### Cloudinary image optimization
 
-## PostgreSQL con Docker
+Recipe card and detail images are delivered through Cloudinary's fetch API when `CLOUDINARY_CLOUD_NAME` is set. Only the cloud name is required for read-only optimization; API key and secret are needed for uploads.
 
-Si no tienes PostgreSQL local, puedes levantarlo con Docker usando la configuración incluida en [docker-compose.yml](/c:/Users/TUF/Pictures/clockhub/docker-compose.yml:1).
-
-1. Inicia la base:
-
-```bash
-docker compose up -d
-```
-
-2. Verifica que el contenedor esté sano:
-
-```bash
-docker compose ps
-```
-
-3. Aplica el esquema y carga datos:
-
-```bash
-npm run prisma:push
-npm run db:seed
-```
-
-4. Cuando termines, puedes detenerlo con:
+To verify your Cloudinary credentials:
 
 ```bash
-docker compose down
+npm run cloudinary:onboard
 ```
 
-Si quieres eliminar también el volumen persistente:
+### Configuring Alternative Email Providers (Non-Gmail)
+Since the app uses standard SMTP protocol (via Nodemailer), you can configure any email service provider by updating the SMTP variables in `.env`:
 
-```bash
-docker compose down -v
-```
+* **Mailtrap (for testing):**
+  ```text
+  SMTP_HOST=sandbox.smtp.mailtrap.io
+  SMTP_PORT=2525
+  SMTP_SECURE=false
+  SMTP_USER=your_mailtrap_username
+  SMTP_PASS=your_mailtrap_password
+  SMTP_FROM=sandbox@example.com
+  ```
+* **Resend:**
+  ```text
+  SMTP_HOST=smtp.resend.com
+  SMTP_PORT=587
+  SMTP_SECURE=false
+  SMTP_USER=resend
+  SMTP_PASS=your_resend_api_key
+  SMTP_FROM=onboarding@resend.dev
+  ```
+* **SendGrid:**
+  ```text
+  SMTP_HOST=smtp.sendgrid.net
+  SMTP_PORT=587
+  SMTP_SECURE=false
+  SMTP_USER=apikey
+  SMTP_PASS=your_sendgrid_api_key
+  SMTP_FROM=your_sender@example.com
+  ```
 
-## Credenciales de seed
+## Database Collections & Administration
 
-- `admin@clockhub.local` / `ChangeMe123!`
-- `manager@clockhub.local` / `ChangeMe123!`
-- `employee@clockhub.local` / `ChangeMe123!`
+The application utilizes MongoDB to store application state across these collections:
+* **`recipes`**: Contains the recipes catalog data (pre-loaded with six starter recipes including Lemon Herb Risotto, Smoky Chickpea Tacos, Berry Oat Skillet, Miso Glazed Salmon Bowl, Rustic Tomato Gnocchi, and Chocolate Lava Mug Cake).
+* **`users`**: Contains authenticated user credentials (stored as salted hashes).
+* **`auditLogs`**: Tracks user actions and administrative logs.
+* **`favorites`**: Tracks relationships mapping users to their bookmarked recipes.
 
-## Endpoints principales
+> [!NOTE]
+> **User Management Pages & APIs:**
+> User registration saves new user records directly to the `users` collection. However, user listing and modification routes (under `/api/users`) return `410 Gone` with the message `"User management is not part of this recipe app."`. This is intended behavior because user administration is handled implicitly by login/registration flows.
 
-### Auth
-
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-
-### Usuarios
-
-- `GET /api/users`
-- `POST /api/users`
-- `GET /api/users/:id`
-- `PATCH /api/users/:id`
-- `DELETE /api/users/:id`
-
-### Horarios
-
-- `GET /api/schedules`
-- `POST /api/schedules`
-- `GET /api/schedules/:id`
-- `PATCH /api/schedules/:id`
-- `DELETE /api/schedules/:id`
-
-### Auditoría y dashboard
-
-- `GET /api/audit`
-- `GET /api/dashboard`
-
-## Reglas de negocio destacadas
-
-- Un horario no puede terminar antes o al mismo tiempo que empieza.
-- No se permite crear ni editar horarios que se solapen para el mismo usuario, salvo que el horario previo esté cancelado.
-- Los managers no pueden crear, modificar o desactivar admins ni managers.
-- Un usuario no puede desactivar su propia cuenta desde el panel.
-- Cada acción crítica genera una entrada en `AuditLog`.
-
-## Comandos útiles
-
-```bash
-npm run dev
-npm run lint
-npm run typecheck
-npm run prisma:generate
-npm run prisma:push
-npm run db:seed
-```
-
-## Estructura
-
-```text
-prisma/
-  schema.prisma
-  seed.ts
-src/
-  app/
-    api/
-    auth/login/
-    dashboard/
-  components/
-  hooks/
-  lib/
-  types/
-```
-
-## Notas
-
-- `middleware.ts` protege `/dashboard` y evita mostrar el login cuando ya existe sesión.
-- La app espera PostgreSQL real; sin `DATABASE_URL` válido, Prisma y las rutas protegidas no podrán inicializarse.
-- Para producción, usa secretos largos y distintos para access y refresh tokens.
+---
+Developed by [Argenis Flores](https://github.com/KamiKoni/Prueba_NextJS.git)
